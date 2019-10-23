@@ -23,26 +23,19 @@ class Synthesizer {
         $ch = curl_init();
 
         if($this->input_type == "file") {
-            $files = '@' . realpath($opts);
-            $data_string = http_build_query(array($params, $files));
+            $file_path = realpath($opts);
+            $params['file'] = new cURLFile($file_path);
             curl_setopt($ch, CURLOPT_URL, $this->api_url_file);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-                            'Content-Type: multipart/form-data'));
         } elseif($this->input_type == "text") {
             $params["text"] = $opts;
-            $data_string = http_build_query($params);
             curl_setopt($ch, CURLOPT_URL, $this->api_url_text);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-                            'Content-Type: application/x-www-form-urlencoded'));
         } else {
             throw new Exception("Type of input. Must be one of 'text' or 'file'.");
         }
 
-        echo $data_string . "\n";
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $data_string);
-
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $params);
         $data = curl_exec($ch);
 
         if (!curl_errno($ch)) {
@@ -51,7 +44,7 @@ class Synthesizer {
                 file_put_contents($this->output, $data);
                 echo "File saved! \n";
             } else {
-                echo $data;
+                echo $data . "\n";
                 echo 'Unexpected HTTP code: ', $http_code, "\n";
             }
         }
@@ -59,16 +52,11 @@ class Synthesizer {
     }
 }
 
-$opts  = "";
-$opts .= "t:";
-$opts .= "l:";
-$opts .= "i:";
-$opts .= "k:";
-$opts .= "o:";
+$opts = "t:l:i:k:o:";
 $longopts  = array("input-type:",);
 $options = getopt($opts, $longopts);
 
-$data = new Synthesizer($options['input-type'],$options['i'], $options['k'], $options['l'], $options['o']);
-$data->synthesize($options['t']);
+$synth = new Synthesizer($options['input-type'],$options['i'], $options['k'], $options['l'], $options['o']);
+$synth->synthesize($options['t']);
 
 ?>
